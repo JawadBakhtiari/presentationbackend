@@ -8,6 +8,8 @@ const lock = new AsyncLock();
 const JWT_SECRET = "llamallamaduck";
 const DATABASE_FILE = "./database.json";
 const { KV_REST_API_URL, KV_REST_API_TOKEN, USE_VERCEL_KV } = process.env;
+const useVercelKV = USE_VERCEL_KV === "true";
+
 /***************************************************************
                        State Management
 ***************************************************************/
@@ -20,7 +22,7 @@ const update = async (admins) =>
   new Promise((resolve, reject) => {
     lock.acquire("saveData", async () => {
       try {
-        if (USE_VERCEL_KV) {
+        if (useVercelKV) {
           // Store to Vercel KV
           const response = await fetch(`${KV_REST_API_URL}/set/admins`, {
             method: "POST",
@@ -47,7 +49,7 @@ const update = async (admins) =>
           );
         }
         resolve();
-      } catch(error) {
+      } catch (error) {
         console.log(error);
         reject(new Error("Writing to database failed"));
       }
@@ -61,7 +63,7 @@ export const reset = () => {
 };
 
 try {
-  if (USE_VERCEL_KV) {
+  if (useVercelKV) {
     // Setup default admin object in KV DB
     save();
 
@@ -80,7 +82,7 @@ try {
     const data = JSON.parse(fs.readFileSync(DATABASE_FILE));
     admins = data.admins;
   }
-} catch(error) {
+} catch (error) {
   console.log("WARNING: No database found, create a new one");
   save();
 }
@@ -106,7 +108,7 @@ export const getEmailFromAuthorization = (authorization) => {
       throw new AccessError("Invalid Token");
     }
     return email;
-  } catch(error) {
+  } catch (error) {
     throw new AccessError("Invalid token");
   }
 };
