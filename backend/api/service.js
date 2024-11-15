@@ -64,9 +64,6 @@ export const reset = () => {
 
 try {
   if (useVercelKV) {
-    // Setup default admin object in KV DB
-    save();
-
     // Read from Vercel KV
     fetch(`${KV_REST_API_URL}/get/admins`, {
       headers: {
@@ -84,7 +81,9 @@ try {
   }
 } catch (error) {
   console.log("WARNING: No database found, create a new one");
-  save();
+  if (!useVercelKV) {
+    save();
+  }
 }
 
 /***************************************************************
