@@ -8,8 +8,6 @@ const lock = new AsyncLock();
 const JWT_SECRET = "llamallamaduck";
 const DATABASE_FILE = "./database.json";
 const { KV_REST_API_URL, KV_REST_API_TOKEN, USE_VERCEL_KV } = process.env;
-const useVercelKV = USE_VERCEL_KV === "true";
-
 /***************************************************************
                        State Management
 ***************************************************************/
@@ -22,7 +20,7 @@ const update = async (admins) =>
   new Promise((resolve, reject) => {
     lock.acquire("saveData", async () => {
       try {
-        if (useVercelKV) {
+        if (USE_VERCEL_KV) {
           // Store to Vercel KV
           const response = await fetch(`${KV_REST_API_URL}/set/admins`, {
             method: "POST",
@@ -49,7 +47,7 @@ const update = async (admins) =>
           );
         }
         resolve();
-      } catch (error) {
+      } catch(error) {
         console.log(error);
         reject(new Error("Writing to database failed"));
       }
@@ -62,31 +60,30 @@ export const reset = () => {
   admins = {};
 };
 
-const initializeAdmins = async () => {
-  try {
-    if (useVercelKV) {
-      // Read from Vercel KV
-      const response = await fetch(`${KV_REST_API_URL}/get/admins`, {
-        headers: {
-          Authorization: `Bearer ${KV_REST_API_TOKEN}`,
-        },
-      });
-      const data = await response.json();
-      admins = JSON.parse(data.result)["admins"];
-    } else {
-      // Read from local file
-      const data = JSON.parse(fs.readFileSync(DATABASE_FILE));
-      admins = data.admins;
-    }
-  } catch (error) {
-    console.log("WARNING: No database found, create a new one");
-    if (!useVercelKV) {
-      save();
-    }
-  }
-};
+try {
+  if (USE_VERCEL_KV) {
+    // Setup default admin object in KV DB
+    save();
 
-initializeAdmins();
+    // Read from Vercel KV
+    fetch(`${KV_REST_API_URL}/get/admins`, {
+      headers: {
+        Authorization: `Bearer ${KV_REST_API_TOKEN}`,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        admins = JSON.parse(data.result)["admins"];
+      });
+  } else {
+    // Read from local file
+    const data = JSON.parse(fs.readFileSync(DATABASE_FILE));
+    admins = data.admins;
+  }
+} catch(error) {
+  console.log("WARNING: No database found, create a new one");
+  save();
+}
 
 /***************************************************************
                        Helper Functions
@@ -109,7 +106,7 @@ export const getEmailFromAuthorization = (authorization) => {
       throw new AccessError("Invalid Token");
     }
     return email;
-  } catch (error) {
+  } catch(error) {
     throw new AccessError("Invalid token");
   }
 };
