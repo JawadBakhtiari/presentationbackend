@@ -14,13 +14,16 @@ const useLogin = () => {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5005/admin/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        "https://z5470461-presto-be-deploy.vercel.app/admin/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data: LoginResponse = (await response.json()) as LoginResponse;
 
